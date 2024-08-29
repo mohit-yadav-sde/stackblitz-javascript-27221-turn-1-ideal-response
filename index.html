@@ -1,23 +1,181 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Home</title>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
-    <!--
-      Need a visual blank slate?
-      Remove all code in `styles.css`!
-    -->
-    <link rel="stylesheet" href="styles.css" />
-    <script type="module" src="script.js"></script>
-  </head>
-  <body>
-    <nav>
-      <a href="/" aria-current="page">Home</a>
-      <a href="/page2.html">Other page</a>
-    </nav>
-    <main>
-      <h1>Home page</h1>
-    </main>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Goals Widget</title>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #goalInput {
+            display: grid;
+            grid-template-columns: 1fr 1fr 100px;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        #goalInput input, #goalInput select, #goalInput button {
+            padding: 5px;
+        }
+        #goalList {
+            list-style-type: none;
+            padding: 0;
+        }
+        .goal-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            cursor: move;
+        }
+        .goal-item input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        .goal-item .goal-content {
+            flex-grow: 1;
+        }
+        .goal-item .goal-title {
+            font-weight: bold;
+        }
+        .goal-item .goal-description {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .goal-item .priority {
+            padding: 2px 5px;
+            border-radius: 3px;
+            color: white;
+            font-weight: bold;
+        }
+        .priority-High { background-color: #ff4d4d; }
+        .priority-Medium { background-color: #ffa64d; }
+        .priority-Low { background-color: #4da6ff; }
+        #progressContainer {
+            margin-top: 20px;
+        }
+        #progressBar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        #progressFill {
+            height: 100%;
+            background-color: #4CAF50;
+            transition: width 0.3s ease;
+        }
+        #quoteContainer {
+            margin-top: 20px;
+            font-style: italic;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Daily Goals Widget</h1>
+    <div id="goalInput">
+        <input type="text" id="goalTitle" placeholder="Enter goal title">
+        <input type="text" id="goalDescription" placeholder="Enter goal description">
+        <select id="goalPriority">
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+        </select>
+        <button onclick="addGoal()">Add Goal</button>
+    </div>
+    <ul id="goalList"></ul>
+    <div id="progressContainer">
+        <div id="progressBar">
+            <div id="progressFill"></div>
+        </div>
+    </div>
+    <div id="quoteContainer"></div>
+
+    <script>
+        let goals = [];
+
+        function addGoal() {
+            const title = document.getElementById('goalTitle').value;
+            const description = document.getElementById('goalDescription').value;
+            const priority = document.getElementById('goalPriority').value;
+            if (title) {
+                goals.push({ title, description, priority, completed: false });
+                updateGoalList();
+                updateProgress();
+                document.getElementById('goalTitle').value = '';
+                document.getElementById('goalDescription').value = '';
+            }
+        }
+
+        function updateGoalList() {
+            const goalList = document.getElementById('goalList');
+            goalList.innerHTML = '';
+            goals.forEach((goal, index) => {
+                const li = document.createElement('li');
+                li.className = 'goal-item';
+                li.innerHTML = `
+                    <input type="checkbox" onchange="toggleGoal(${index})" ${goal.completed ? 'checked' : ''}>
+                    <div class="goal-content">
+                        <div class="goal-title">${goal.title}</div>
+                        <div class="goal-description">${goal.description}</div>
+                    </div>
+                    <span class="priority priority-${goal.priority}">${goal.priority}</span>
+                `;
+                goalList.appendChild(li);
+            });
+        }
+
+        function toggleGoal(index) {
+            goals[index].completed = !goals[index].completed;
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const completedGoals = goals.filter(goal => goal.completed).length;
+            const totalGoals = goals.length;
+            const progress = totalGoals > 0 ? (completedGoals / totalGoals) * 100 : 0;
+
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = `${progress}%`;
+        }
+
+        function displayDailyQuote() {
+            const quotes = [
+                "The secret of getting ahead is getting started. - Mark Twain",
+                "It always seems impossible until it's done. - Nelson Mandela",
+                "The way to get started is to quit talking and begin doing. - Walt Disney",
+                "Don't watch the clock; do what it does. Keep going. - Sam Levenson",
+                "Success is not final, failure is not fatal: it is the courage to continue that counts. - Winston Churchill"
+            ];
+            const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+            document.getElementById('quoteContainer').textContent = randomQuote;
+        }
+
+        // Initialize Sortable for drag-and-drop
+        new Sortable(document.getElementById('goalList'), {
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            onEnd: function() {
+                goals = Array.from(document.querySelectorAll('.goal-item')).map(item => ({
+                    title: item.querySelector('.goal-title').textContent,
+                    description: item.querySelector('.goal-description').textContent,
+                    priority: item.querySelector('.priority').textContent,
+                    completed: item.querySelector('input[type="checkbox"]').checked
+                }));
+                updateProgress();
+            }
+        });
+
+        // Initial setup
+        displayDailyQuote();
+        updateProgress();
+    </script>
+</body>
 </html>
